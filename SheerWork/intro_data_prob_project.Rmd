@@ -1,0 +1,145 @@
+---
+title: "Exploring the BRFSS data"
+output: 
+  html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+### Load packages
+
+```{r load-packages, message = FALSE}
+library(ggplot2)
+library(dplyr)
+```
+
+### Load data
+
+```{r load-data}
+load("brfss2013.RData")
+```
+
+
+
+* * *
+
+## Part 1: Data
+BRFSS (Behavioral Risk Factor Surveillance) collects state data of the US residents regarding their health issues and conditions. Various types of data regarding their physical activeness, diet intake, previous medical history, living conditions, mental health, income levels, etc. have been collected, by conducting surveys via the landlines or cellular telephones.
+  Disproportionate stratified sampling (DSS) was used for the landline survey and random sampling was used for the cellular telephone survey.
+  The data collected has 491775 rows(patient) and 330 columns(variables). We shall use this data to gain some insights about the population and infer some statistical data about our questions. The BRFSS study is of observational nature which employs stratified design based on random sampling.Also, the survey must be generic to all non-institutionalized adults (18 or more). This survey is a completely experimental study.
+
+
+
+* * *
+
+## Part 2: Research questions
+
+**Research quesion 1:**
+Plotting and visualizing to see if there exists some relation between income levels and days of poor health. As income levels might play a huge role in the number of people being unwell for prolonged days.  
+
+**Research quesion 2:**
+The second question involves the generally known fact that daily alchohol consumption and smoking leads to heart attacks, strokes or chronic diseases. We shall look into the data provided and gain some insights to verify whether this is actually the case or does regular consumption of alchohol and smoking not have any such relation to the medical conditions mentioned.
+
+**Research quesion 3:**
+Do sleep hours affect the general health of citizens? It has been claimed by many sites and surveys that less sleep causes adverse effects on the body, we shall verify this claim via a plot and summarise our data in a table as well.
+
+* * *
+
+## Part 3: Exploratory data analysis
+
+NOTE: Insert code chunks as needed by clicking on the "Insert a new code chunk" 
+button (green button with orange arrow) above. Make sure that your code is visible
+in the project you submit. Delete this note when before you submit your work.
+**Research quesion 1:**
+
+```{r}
+incm_hlth <- brfss2013 %>%
+  filter(!is.na(income2),!is.na(medcost),!is.na(poorhlth)) %>%
+  select(income2,medcost,poorhlth)
+incm_conn <- incm_hlth %>%
+  filter(poorhlth>0) %>%
+  group_by(income2) %>%
+  summarise(count=n(),mean_poorhlth=mean(poorhlth))
+incm_conn
+ggplot (incm_conn, aes(x=income2,y=mean_poorhlth))+
+  geom_point(aes(income2,mean_poorhlth))+
+  theme(axis.text.x = element_text(angle = 90))+
+    labs(title="Days of poor health according to Income levels",
+         x="Income level", y="Mean days")
+```
+
+**Inference**
+This graph shows us that the mean number of days of poor health experienced by people varies drastically with their income levels and this may be due to several factors such as poor living conditions, unavailability of hospitals nearby, medical expenses being unnaffordable.
+
+
+
+
+**Research quesion 2:**
+
+```{r}
+alc <- filter(brfss2013, !is.na(avedrnk2), !is.na(smokday2),!is.na(cvdinfr4),!is.na(cvdcrhd4),!is.na(chccopd1)) %>%
+  mutate(reg_ds = ifelse(smokday2=="Every day" & avedrnk2>0,"Yes","No")) %>%
+  mutate(suffered = ifelse(cvdinfr4=="Yes" | cvdcrhd4=="Yes" | chccopd1=="Yes","Yes","No")) %>%
+  filter(reg_ds=="Yes")%>%
+  select(reg_ds,cvdinfr4,cvdcrhd4,chccopd1,suffered)
+ggplot(data=alc,aes(x=suffered))+geom_bar()
+```
+
+
+
+**Inference**
+It's very shocking to see that people who are regular drinkers and smokers have not ever been diagnosed with the conditions mentioned. This data analused could have various reasons for such an outcome such as not visiting the hospital and getting checked frequently or many other underlying issues.
+
+
+```{r}
+alc <- filter(brfss2013, !is.na(avedrnk2), !is.na(smokday2),!is.na(cvdinfr4),!is.na(cvdcrhd4),!is.na(chccopd1)) %>%
+  mutate(reg_ds = ifelse(smokday2=="Every day" & avedrnk2>0,"Yes","No")) %>%
+  filter(reg_ds=="Yes")%>%
+  select(reg_ds,cvdinfr4,cvdcrhd4,chccopd1)
+
+#storing counts of yes and no for heart attacks, strokes, chronic diseases in dataframes and merging them after renaming the columns so that appropriate join can be applied.
+vals1 <- alc %>%
+  count(cvdinfr4)
+names(vals1)[names(vals1) == "cvdinfr4"] <- "Y_N"
+names(vals1)[names(vals1) == "n"] <- "Heart Attack"
+
+vals2 <- alc %>%
+  count(cvdcrhd4)
+names(vals2)[names(vals2) == "cvdcrhd4"] <- "Y_N"
+names(vals2)[names(vals2) == "n"] <- "Stroke"
+ 
+vals3 <- alc %>%
+  count(chccopd1)
+names(vals3)[names(vals3) == "chccopd1"] <- "Y_N"
+names(vals3)[names(vals3) == "n"] <- "Chronic or pulmonary diseases"
+
+d1 <- merge(vals1,vals2)
+df<-merge(d1,vals3)
+df
+```
+**Inference**
+From the table we can very clearly infer the data of the number of regular drinkers and smokers who have or have not ever been diagnosed with the three given conditions.
+
+
+
+**Research quesion 3:**
+
+```{r}
+slp_hrs <- filter(brfss2013, !is.na(sleptim1), sleptim1<100)
+# Creating df general health and mean of sleep time for each general health category.
+hlth_slp <- slp_hrs %>% 
+  group_by(genhlth) %>% 
+  summarise(mn_sleep = mean(sleptim1))
+hlth_slp
+ggplot(hlth_slp, aes(x=genhlth, y=mn_sleep)) +
+    geom_point(aes(genhlth, mn_sleep)) +
+    labs(title="Mean hours of sleep for each general health rating",
+         x="General health rating", y="Mean hours of sleep")
+
+```
+
+
+**Inference**
+The graph very clearly portrays that the general health rating shows a depreciation with decrease in the number of average sleep hours.
+Although this plot may or may not be accurate owing to some other factors.
