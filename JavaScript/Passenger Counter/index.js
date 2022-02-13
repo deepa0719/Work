@@ -8,11 +8,13 @@ let saveEl = document.getElementById("save-el")
 
 function increment() {
     count = count+1
-    countEl.innerText = count
+    countEl.textContent = count
 }
 
 function save() {
     let display = " " + count + " - "
     saveEl.textContent += display
+    count = 0
+    countEl.textContent = count
     console.log(count)
 }
