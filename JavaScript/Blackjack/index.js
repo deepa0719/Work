@@ -11,7 +11,16 @@ let sumEl = document.getElementById("sum-el")
 let cardsEl = document.getElementById("cards-el")
 
 function getRandomCard() {
-    return 5
+    let randomNum = Math.floor(Math.random()*13)+1 //1 - 13
+    if (randomNum === 1) {
+        return 11
+    }
+    else if (randomNum > 10) {
+        return 10
+    }
+    else {
+        return randomNum
+    }
 }
 
 function startGame() {
