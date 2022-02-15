@@ -1,8 +1,7 @@
 const depthFirstPrint = (graph, source) => {
     //Iterative Way
     const stack = [ source ];
-
-    while (stack.length > 0) {
+        while (stack.length > 0) {
         const current = stack.pop();
         console.log(current);
         
